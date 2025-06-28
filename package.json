@@ -1,0 +1,21 @@
+{
+  "name": "shreeagentcli",
+  "version": "1.0.0",
+  "description": "this is cli tool to use ollama model, features: create, testing, deploy to developer code as per json step's and develope localy.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bobbysingh2005/shree-agent-cli.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/bobbysingh2005/shree-agent-cli/issues"
+  },
+  "homepage": "https://github.com/bobbysingh2005/shree-agent-cli#readme"
+}
