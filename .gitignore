@@ -134,3 +134,10 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+## custom or backup files and folders
+bk-*
+bk_*
+
+# Ignore tasks.json file
+tasks.json
