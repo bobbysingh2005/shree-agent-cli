@@ -11,82 +11,77 @@ const configHelper_js_1 = require("../utils/configHelper.js");
 const OLLAMA_URL = 'http://localhost:11434';
 async function startChat() {
     console.log(chalk_1.default.yellow('\nOllama Chat Interface\n'));
-    // Step 1: Fetch model list
+    // Fetch available models
+    console.log('Loading available models from Ollama...');
     let modelList = [];
     try {
         const res = await axios_1.default.get(`${OLLAMA_URL}/api/tags`);
         modelList = res.data.models.map((m) => m.name);
+        console.log('Models loaded successfully.\n');
     }
     catch (error) {
-        if (error instanceof Error) {
-            console.error(`Error fetching models: ${error.message}`);
-        }
-        else {
-            console.error('Unknown error fetching models.');
-        }
+        console.log('Error: Failed to fetch models from Ollama.');
         return;
     }
-    const config = (0, configHelper_js_1.loadConfig)();
-    const defaultModel = config.chatModel && modelList.includes(config.chatModel)
-        ? config.chatModel
-        : modelList[0];
-    const { selectedModel } = await inquirer_1.default.prompt([
+    const modelChoices = modelList.map((name, i) => `${i + 1}. ${name}`);
+    const { selectedModelLabel } = await inquirer_1.default.prompt([
         {
             type: 'list',
-            name: 'selectedModel',
+            name: 'selectedModelLabel',
             message: 'Select an Ollama model to use:',
-            choices: modelList,
-            default: defaultModel
+            choices: modelChoices
         }
     ]);
-    (0, configHelper_js_1.saveConfig)({ chatModel: selectedModel });
-    // Step 2: Chat loop
-    const history = [];
-    const exitCommands = ['exit', 'quit', 'back', 'menu', ':exit', ':quit', ':menu'];
+    const model = selectedModelLabel.split('. ')[1];
+    (0, configHelper_js_1.saveConfig)({ chatModel: model });
     while (true) {
-        const { userInput } = await inquirer_1.default.prompt([
+        const { input } = await inquirer_1.default.prompt([
             {
                 type: 'input',
-                name: 'userInput',
-                message: 'You:'
+                name: 'input',
+                message: 'You:',
             }
         ]);
-        const trimmed = userInput.trim().toLowerCase();
-        if (exitCommands.includes(trimmed)) {
-            console.log(chalk_1.default.cyan('\nReturning to main menu...\n'));
-            break;
-        }
-        history.push({ role: 'user', content: userInput });
-        let responseText = '';
+        const userInput = input.trim().toLowerCase();
+        if (userInput === ':menu')
+            return;
+        if (userInput === ':exit')
+            process.exit();
+        console.log('🔁 Sending message to Ollama...\n');
         try {
-            const res = await axios_1.default.post(`${OLLAMA_URL}/api/chat`, {
-                model: selectedModel,
-                messages: history
+            const res = await axios_1.default.post(`${OLLAMA_URL}/api/generate`, {
+                model,
+                prompt: input,
+                stream: true
+            }, {
+                responseType: 'stream'
             });
-            const messageObj = res.data.message;
-            if (messageObj && messageObj.content) {
-                responseText = messageObj.content.trim();
-            }
-            else {
-                // fallback to /api/generate
-                const fallback = await axios_1.default.post(`${OLLAMA_URL}/api/generate`, {
-                    model: selectedModel,
-                    prompt: userInput,
-                    stream: false
+            console.log(chalk_1.default.green('💬 Ollama:\n'));
+            let buffer = '';
+            res.data.on('data', (chunk) => {
+                const lines = chunk.toString().split('\n').filter(Boolean);
+                for (const line of lines) {
+                    try {
+                        const json = JSON.parse(line);
+                        if (json.response) {
+                            process.stdout.write(json.response);
+                            buffer += json.response;
+                        }
+                    }
+                    catch (err) {
+                        // skip bad JSON line
+                    }
+                }
+            });
+            await new Promise((resolve) => {
+                res.data.on('end', () => {
+                    console.log('\n');
+                    resolve();
                 });
-                responseText = fallback.data.response.trim();
-            }
+            });
         }
         catch (e) {
-            if (e instanceof Error) {
-                console.error(`Error: ${e.message}`);
-            }
-            else {
-                console.error('Unknown error occurred.');
-            }
-            continue;
+            console.log('❌ Error: Failed to get response from Ollama.\n');
         }
-        history.push({ role: 'assistant', content: responseText });
-        console.log(chalk_1.default.greenBright(`\nAssistant:\n${responseText}\n`));
     }
 }

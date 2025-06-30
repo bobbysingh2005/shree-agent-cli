@@ -63,3 +63,19 @@ Now you can run:
 ```
 taskAgent
 ```
+
+
+## How to Contribute
+
+We welcome your contributions to improve the CLI!
+
+1. Fork the repository
+2. Create a new branch:
+   git checkout -b feature/your-feature-name
+3. Make changes and add tests
+4. Commit and push:
+   git commit -m "Add your message"
+   git push origin feature/your-feature-name
+5. Open a pull request
+
+Please follow the existing file structure and naming conventions.
