@@ -1,114 +1,65 @@
-# shreeAgentCli - Smart Project Assistant CLI
+# shreeAgentCli
 
-A powerful CLI tool to discuss, generate, test, and manage full-stack projects using local Ollama models (like Deepseek, Starcoder, etc).
-Designed for screen reader users with full keyboard navigation.
+**A smart, accessible CLI tool powered by Ollama AI models to help developers plan, generate, and test full-stack projects with ease.**
+
+Command: `taskAgent`
 
 ---
 
-## Installation
+## 📦 Features
 
-```bash
+1. **Chat with Ollama**
+   - General-purpose conversation with any local Ollama model.
+
+2. **Project Discussion**
+   - Create a full project plan by answering questions.
+   - Stores plan as a JSON file in root directory.
+
+3. **Project Generation**
+   - Selects a `.json` plan from project root.
+   - Asks Ollama to:
+     - Generate folder and file structure.
+     - Write source code in each file.
+
+4. **Project Validation**
+   - Checks if generated files exist and steps match the plan.
+
+---
+
+## ✅ Requirements
+
+- Node.js version 18 or higher
+- TypeScript (for development)
+- Ollama running locally (`http://localhost:11434`)
+- Ollama model installed (e.g., `llama3`, `codellama`, `gemma`, etc.)
+
+---
+
+## 🔧 Installation (Development Mode)
+
+1. Clone this repository:
+
+```
 git clone https://github.com/bobbysingh2005/shree-agent-cli.git
 cd shreeAgentCli
+```
+2. 
+Install dependencies:
+```
 npm install
-````
-
----
-
-## Build & Run
-
-```bash
-# Compile TypeScript to JavaScript in /bin
+```
+3. 
+Build project:
+```
 npm run build
-
-# Start the CLI
-node ./bin/index.js
 ```
-
----
-
-## Features
-
-### 1. Chat with Ollama
-
-* General Q\&A about your project.
-* After response, option to insert AI reply into a real file (top or bottom).
-
-### 2. Project Discussion
-
-* Define your project name, description, and step list.
-* It saves a `.json` file like `my-app.json`.
-
-### 3. Project Generation
-
-* Select `.json` plan file
-* Select Ollama model
-* AI creates folder structure and files with full code
-* All code is saved under folder like `my-app/`
-
-### 4. Project Validation
-
-* Validate if all generated files are:
-
-  * Complete (not placeholders)
-  * Exist in correct locations
-
----
-
-## Ollama Integration
-
-* Works with any local Ollama model
-* Auto-fetches available models from:
-  [http://localhost:11434/api/tags](http://localhost:11434/api/tags)
-
----
-
-## Folder Structure
-
-shreeAgentCli/
-├── src/
-│   ├── index.ts              # Main menu
-│   ├── core/
-│   │   ├── chat.ts           # Chat + insert
-│   │   ├── planner.ts        # Project JSON planner
-│   │   ├── generator.ts      # Project generator from plan
-│   │   └── validator.ts      # Validate created files
-│   └── utils/
-│       └── configHelper.ts   # Store model settings
-├── bin/                      # Compiled output
-├── package.json
-├── tsconfig.json
-└── README.md
-
----
-
-## Config Storage
-
-Model selections are stored in:
-
-\~/.shreeAgentCli/config.json
-
-Example content:
-
-{
-"chatModel": "deepseek-coder",
-"generateModel": "starcoder",
-"validateModel": "deepseek-coder"
-}
-
----
-
-## Example Flow
-
-```bash
-node ./bin/index.js
+4. 
+Link CLI command globally:
 ```
-
-Choose:
-
-1. Project Discussion → save `my-api.json`
-2. Project Generation → select `my-api.json` + model
-3. Project Validation → check all generated files
-4. Chat → ask questions, insert into files
-
+npm link
+```
+5. 
+Now you can run:
+```
+taskAgent
 ```

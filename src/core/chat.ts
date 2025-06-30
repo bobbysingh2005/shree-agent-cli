@@ -8,7 +8,7 @@ const OLLAMA_URL = 'http://localhost:11434';
 export async function startChat() {
   console.log(chalk.yellow('\nOllama Chat Interface\n'));
 
-  // 1. Fetch available models
+  // Step 1: Fetch model list
   let modelList: string[] = [];
   try {
     const res = await axios.get(`${OLLAMA_URL}/api/tags`);
@@ -27,7 +27,6 @@ export async function startChat() {
     ? config.chatModel
     : modelList[0];
 
-  // 2. Let user select model with accessible list
   const { selectedModel } = await inquirer.prompt([
     {
       type: 'list',
@@ -40,8 +39,9 @@ export async function startChat() {
 
   saveConfig({ chatModel: selectedModel });
 
-  // 3. Begin chat loop
+  // Step 2: Chat loop
   const history: { role: string; content: string }[] = [];
+  const exitCommands = ['exit', 'quit', 'back', 'menu', ':exit', ':quit', ':menu'];
 
   while (true) {
     const { userInput } = await inquirer.prompt([
@@ -53,12 +53,14 @@ export async function startChat() {
     ]);
 
     const trimmed = userInput.trim().toLowerCase();
-    if (trimmed === 'exit' || trimmed === 'quit' || trimmed === 'back') {
+    if (exitCommands.includes(trimmed)) {
       console.log(chalk.cyan('\nReturning to main menu...\n'));
       break;
     }
 
     history.push({ role: 'user', content: userInput });
+
+    let responseText = '';
 
     try {
       const res = await axios.post(`${OLLAMA_URL}/api/chat`, {
@@ -66,16 +68,28 @@ export async function startChat() {
         messages: history
       });
 
-      const response = res.data.message.content.trim();
-      history.push({ role: 'assistant', content: response });
-
-      console.log(chalk.greenBright(`\nAssistant:\n${response}\n`));
+      const messageObj = res.data.message;
+      if (messageObj && messageObj.content) {
+        responseText = messageObj.content.trim();
+      } else {
+        // fallback to /api/generate
+        const fallback = await axios.post(`${OLLAMA_URL}/api/generate`, {
+          model: selectedModel,
+          prompt: userInput,
+          stream: false
+        });
+        responseText = fallback.data.response.trim();
+      }
     } catch (e: unknown) {
       if (e instanceof Error) {
         console.error(`Error: ${e.message}`);
       } else {
-        console.error('Unknown error occurred during chat.');
+        console.error('Unknown error occurred.');
       }
+      continue;
     }
+
+    history.push({ role: 'assistant', content: responseText });
+    console.log(chalk.greenBright(`\nAssistant:\n${responseText}\n`));
   }
 }

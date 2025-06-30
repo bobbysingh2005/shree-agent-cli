@@ -4,29 +4,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.startChat = startChat;
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
 const inquirer_1 = __importDefault(require("inquirer"));
 const axios_1 = __importDefault(require("axios"));
+const chalk_1 = __importDefault(require("chalk"));
 const configHelper_js_1 = require("../utils/configHelper.js");
 const OLLAMA_URL = 'http://localhost:11434';
 async function startChat() {
-    console.log('Chat Mode - Ask anything about your project');
-    const files = fs_1.default.readdirSync(process.cwd()).filter(f => f.endsWith('.json'));
-    if (files.length === 0) {
-        console.error('No .json project plan files found.');
-        return;
-    }
-    const { selectedFile } = await inquirer_1.default.prompt([
-        {
-            type: 'list',
-            name: 'selectedFile',
-            message: 'Select a project plan for context:',
-            choices: files
-        }
-    ]);
-    const plan = JSON.parse(fs_1.default.readFileSync(path_1.default.resolve(selectedFile), 'utf-8'));
-    const projectPath = path_1.default.resolve(process.cwd(), plan.name.replace(/\s+/g, '_'));
+    console.log(chalk_1.default.yellow('\nOllama Chat Interface\n'));
+    // Step 1: Fetch model list
     let modelList = [];
     try {
         const res = await axios_1.default.get(`${OLLAMA_URL}/api/tags`);
@@ -37,7 +22,7 @@ async function startChat() {
             console.error(`Error fetching models: ${error.message}`);
         }
         else {
-            console.error('Unknown error while fetching models.');
+            console.error('Unknown error fetching models.');
         }
         return;
     }
@@ -45,75 +30,51 @@ async function startChat() {
     const defaultModel = config.chatModel && modelList.includes(config.chatModel)
         ? config.chatModel
         : modelList[0];
-    const { modelIndex } = await inquirer_1.default.prompt([
+    const { selectedModel } = await inquirer_1.default.prompt([
         {
-            type: 'input',
-            name: 'modelIndex',
-            message: `Select model number (1 to ${modelList.length}):`,
-            validate: (val) => {
-                const n = Number(val);
-                return n >= 1 && n <= modelList.length || 'Invalid number';
-            }
+            type: 'list',
+            name: 'selectedModel',
+            message: 'Select an Ollama model to use:',
+            choices: modelList,
+            default: defaultModel
         }
     ]);
-    const selectedModel = modelList[Number(modelIndex) - 1];
     (0, configHelper_js_1.saveConfig)({ chatModel: selectedModel });
-    let chatHistory = `You are an AI project assistant. This project is described as: ${plan.description}`;
+    // Step 2: Chat loop
+    const history = [];
+    const exitCommands = ['exit', 'quit', 'back', 'menu', ':exit', ':quit', ':menu'];
     while (true) {
-        const { question } = await inquirer_1.default.prompt([
+        const { userInput } = await inquirer_1.default.prompt([
             {
                 type: 'input',
-                name: 'question',
-                message: 'Ask something (or type exit):'
+                name: 'userInput',
+                message: 'You:'
             }
         ]);
-        if (question.toLowerCase() === 'exit')
+        const trimmed = userInput.trim().toLowerCase();
+        if (exitCommands.includes(trimmed)) {
+            console.log(chalk_1.default.cyan('\nReturning to main menu...\n'));
             break;
-        chatHistory += `\nUser: ${question}`;
+        }
+        history.push({ role: 'user', content: userInput });
+        let responseText = '';
         try {
-            const res = await axios_1.default.post(`${OLLAMA_URL}/api/generate`, {
+            const res = await axios_1.default.post(`${OLLAMA_URL}/api/chat`, {
                 model: selectedModel,
-                prompt: chatHistory,
-                stream: false
+                messages: history
             });
-            const reply = res.data.response.trim();
-            console.log('\nAI:', reply);
-            chatHistory += `\nAI: ${reply}`;
-            const { insert } = await inquirer_1.default.prompt([
-                {
-                    type: 'confirm',
-                    name: 'insert',
-                    message: 'Do you want to insert this into a file?',
-                    default: false
-                }
-            ]);
-            if (insert) {
-                const allFiles = fs_1.default.readdirSync(projectPath, { withFileTypes: true })
-                    .filter(f => f.isFile())
-                    .map(f => f.name);
-                const { fileChoice } = await inquirer_1.default.prompt([
-                    {
-                        type: 'list',
-                        name: 'fileChoice',
-                        message: 'Choose file to insert into:',
-                        choices: allFiles
-                    }
-                ]);
-                const fullPath = path_1.default.join(projectPath, fileChoice);
-                const { position } = await inquirer_1.default.prompt([
-                    {
-                        type: 'list',
-                        name: 'position',
-                        message: 'Where to insert?',
-                        choices: ['Top of file', 'Bottom of file']
-                    }
-                ]);
-                const existing = fs_1.default.readFileSync(fullPath, 'utf-8');
-                const updated = position === 'Top of file'
-                    ? `${reply}\n\n${existing}`
-                    : `${existing}\n\n${reply}`;
-                fs_1.default.writeFileSync(fullPath, updated);
-                console.log(`Inserted into ${fileChoice}`);
+            const messageObj = res.data.message;
+            if (messageObj && messageObj.content) {
+                responseText = messageObj.content.trim();
+            }
+            else {
+                // fallback to /api/generate
+                const fallback = await axios_1.default.post(`${OLLAMA_URL}/api/generate`, {
+                    model: selectedModel,
+                    prompt: userInput,
+                    stream: false
+                });
+                responseText = fallback.data.response.trim();
             }
         }
         catch (e) {
@@ -121,9 +82,11 @@ async function startChat() {
                 console.error(`Error: ${e.message}`);
             }
             else {
-                console.error('Unknown error during chat generation.');
+                console.error('Unknown error occurred.');
             }
+            continue;
         }
+        history.push({ role: 'assistant', content: responseText });
+        console.log(chalk_1.default.greenBright(`\nAssistant:\n${responseText}\n`));
     }
-    console.log('Chat session ended.');
 }
