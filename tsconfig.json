@@ -1,16 +1,14 @@
 {
   "compilerOptions": {
-    "outDir": "bin",
-    "target": "ES2020",
+    "lib": ["esnext", "dom"],
+"target": "esnext",
     "module": "CommonJS",
-    "moduleResolution": "Node",
+    "outDir": "./dist",
+    "rootDir": "./src",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "allowJs": true,
-    "resolveJsonModule": true
+    "strict": true,
+    "skipLibCheck": true
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

@@ -8,74 +8,73 @@ import { loadConfig, saveConfig } from '../utils/configHelper.js';
 const OLLAMA_URL = 'http://localhost:11434';
 
 export async function generateProject() {
-  console.log(chalk.yellow('\nProject Generation\n'));
+  console.log('\n🧠 Smart Project Generator');
 
-  // Step 1: List only .json files from root directory
-  const files = fs.readdirSync(process.cwd()).filter(f => f.endsWith('.json'));
+  // Step 1: List .json project files in current folder
+  const files = fs
+    .readdirSync(process.cwd())
+    .filter((f) => f.endsWith('.json') && fs.statSync(f).isFile());
 
   if (files.length === 0) {
-    console.error(chalk.red('No .json project plan files found in root folder.'));
+    console.error(chalk.red('❌ No .json project plan files found in this folder.'));
     return;
   }
 
-  const { selectedFileName } = await inquirer.prompt([
+  const { selectedFile } = await inquirer.prompt([
     {
       type: 'list',
-      name: 'selectedFileName',
-      message: 'Select a project plan file:',
-      choices: files
-    }
+      name: 'selectedFile',
+      message: '📄 Select a project plan file:',
+      choices: files,
+    },
   ]);
 
-  const selectedFilePath = path.resolve(process.cwd(), selectedFileName);
-
-  // Step 2: Read and parse the selected JSON file
-  let plan: { name?: string; description: string } = { description: '' };
+  const planRaw = fs.readFileSync(path.resolve(selectedFile), 'utf-8');
+  let plan: any;
 
   try {
-    const raw = fs.readFileSync(selectedFilePath, 'utf-8');
-    plan = JSON.parse(raw);
+    plan = JSON.parse(planRaw);
   } catch {
-    console.error(chalk.red('Invalid JSON. Please check your file format.'));
+    console.error(chalk.red('❌ Invalid JSON format in selected file.'));
     return;
   }
 
-  if (!plan.description) {
-    console.error(chalk.red('Missing project description in selected file.'));
+  if (!plan.description || !plan.outputFolder) {
+    console.error(chalk.red('❌ Project plan must include "description" and "outputFolder".'));
     return;
   }
 
-  // Step 3: Get Ollama model list
+  console.log(chalk.gray(`\n📦 Project: ${plan.name || 'Unnamed'} → Folder: ${plan.outputFolder}`));
+
+  // Step 2: Fetch Ollama models
   let modelList: string[] = [];
   try {
     const res = await axios.get(`${OLLAMA_URL}/api/tags`);
-    modelList = res.data.models.map((m: { name: string }) => m.name);
-  } catch (e: unknown) {
-    if (e instanceof Error) {
-      console.error(`Failed to fetch models: ${e.message}`);
-    } else {
-      console.error('Unknown error fetching models.');
-    }
+    modelList = res.data.models.map((m: any) => m.name);
+  } catch (error: any) {
+    console.error(chalk.red(`❌ Failed to fetch models: ${error.message}`));
     return;
   }
 
-  // Step 3a: Show model list with numbers for accessibility
-  const modelChoices = modelList.map((name, i) => `${i + 1}. ${name}`);
+  const config = loadConfig();
+  const defaultModel = config.generateModel && modelList.includes(config.generateModel)
+    ? config.generateModel
+    : modelList[0];
 
-  const { selectedModelLabel } = await inquirer.prompt([
+  const { selectedModel } = await inquirer.prompt([
     {
       type: 'list',
-      name: 'selectedModelLabel',
-      message: 'Select a model:',
-      choices: modelChoices
-    }
+      name: 'selectedModel',
+      message: '🤖 Select an Ollama model:',
+      choices: modelList,
+      default: defaultModel,
+    },
   ]);
 
-  const selectedModel = selectedModelLabel.split('. ')[1];
   saveConfig({ generateModel: selectedModel });
 
-  // Step 4: Ask Ollama for file list
-  const structurePrompt = `
+  // Step 3: Ask Ollama to generate structure
+  const promptStructure = `
 You are an AI assistant. Based on this project description:
 """
 ${plan.description}
@@ -85,66 +84,77 @@ Return only a JSON array like: ["src/index.ts", "src/routes/user.ts", "README.md
 Do NOT return code or explanation.
 `;
 
-  console.log('\nGenerating folder structure...');
+  console.log('\n📁 Generating folder structure...');
   let fileList: string[] = [];
 
   try {
     const res = await axios.post(`${OLLAMA_URL}/api/generate`, {
       model: selectedModel,
-      prompt: structurePrompt,
-      stream: false
+      prompt: promptStructure,
+      stream: false,
     });
-    fileList = JSON.parse(res.data.response);
-  } catch (e: unknown) {
-    if (e instanceof Error) {
-      console.error(`Failed to generate structure: ${e.message}`);
-    } else {
-      console.error('Unknown error generating structure.');
+
+    let response = res.data.response.trim();
+    if (response.startsWith('```')) {
+      response = response.replace(/```[a-z]*\n?/gi, '').replace(/```$/, '').trim();
     }
+
+    fileList = JSON.parse(response);
+  } catch (error: any) {
+    console.error(chalk.red(`❌ Failed to get structure: ${error.message}`));
     return;
   }
 
-  const baseName = plan.name && typeof plan.name === 'string'
-    ? plan.name.replace(/\s+/g, '_')
-    : path.basename(selectedFileName, '.json');
-
-  const base = path.resolve(process.cwd(), baseName);
-  if (!fs.existsSync(base)) fs.mkdirSync(base);
+  const base = path.resolve(process.cwd(), plan.outputFolder);
+  if (!fs.existsSync(base)) fs.mkdirSync(base, { recursive: true });
 
   for (const relPath of fileList) {
     const fullPath = path.join(base, relPath);
     const dir = path.dirname(fullPath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(fullPath, '// Placeholder for AI-generated code');
+    fs.writeFileSync(fullPath, '// Placeholder');
   }
 
-  console.log(chalk.green(`Created ${fileList.length} files.`));
+  console.log(chalk.green(`📂 Created ${fileList.length} files.`));
 
-  // Step 5: Generate content for each file
+  // Step 4: Generate file contents
+  let index = 0;
   for (const relPath of fileList) {
+    index++;
+    const fullPath = path.join(base, relPath);
     const filePrompt = `Generate complete code for file: ${relPath}.
 It is part of this project: ${plan.description}
 Only return valid code.`;
+
+    console.log(chalk.gray(`\n💡 Generating (${index}/${fileList.length}): ${relPath}`));
 
     try {
       const res = await axios.post(`${OLLAMA_URL}/api/generate`, {
         model: selectedModel,
         prompt: filePrompt,
-        stream: false
+        stream: false,
       });
 
-      const code = res.data.response.trim();
-      const fullPath = path.join(base, relPath);
-      fs.writeFileSync(fullPath, code);
-      console.log(chalk.green(`✅ ${relPath}`));
-    } catch (e: unknown) {
-      if (e instanceof Error) {
-        console.error(`❌ Failed on ${relPath}: ${e.message}`);
-      } else {
-        console.error(`❌ Unknown error on file: ${relPath}`);
+      let code = res.data.response.trim();
+      if (code.startsWith('```')) {
+        code = code.replace(/```[a-z]*\n?/gi, '').replace(/```$/, '').trim();
       }
+
+      fs.writeFileSync(fullPath, code);
+      console.log(chalk.green(`✅ Saved: ${relPath}`));
+    } catch (error: any) {
+      console.error(chalk.red(`❌ Failed on ${relPath}: ${error.message}`));
     }
   }
 
-  console.log(chalk.greenBright(`\nProject created in folder: ${base}\n`));
+  // Step 5: Summary
+  console.log(chalk.bold('\n📋 Project Generation Summary:'));
+  console.log(chalk.green(`📁 Output Folder: ${base}`));
+  console.log(chalk.cyan(`📄 Plan File: ${selectedFile}`));
+  console.log(chalk.cyan(`🤖 Model Used: ${selectedModel}`));
+  console.log(chalk.cyan(`📝 Files Created: ${fileList.length}`));
+  if (plan.steps && Array.isArray(plan.steps)) {
+    console.log(chalk.cyan(`🪜 Steps Defined: ${plan.steps.length}`));
+  }
+  console.log(chalk.greenBright(`\n🎉 Your project is ready!\n`));
 }

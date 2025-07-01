@@ -1,27 +1,26 @@
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
 
-const CONFIG_DIR = path.join(os.homedir(), '.shreeAgentCli');
-const CONFIG_PATH = path.join(CONFIG_DIR, 'config.json');
+const CONFIG_PATH = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.shreeAgentCli.json');
 
-export function loadConfig(): any {
+export type Config = {
+  chatModel?: string;
+  generateModel?: string;
+  [key: string]: string | undefined; // ✅ This allows dynamic keys
+};
+
+export function loadConfig(): Config {
+  if (!fs.existsSync(CONFIG_PATH)) return {};
   try {
-    if (fs.existsSync(CONFIG_PATH)) {
-      return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
-    }
+    const content = fs.readFileSync(CONFIG_PATH, 'utf-8');
+    return JSON.parse(content) as Config;
   } catch {
     return {};
   }
-  return {};
 }
 
-export function saveConfig(newConfig: any): void {
-  if (!fs.existsSync(CONFIG_DIR)) {
-    fs.mkdirSync(CONFIG_DIR, { recursive: true });
-  }
-
+export function saveConfig(newValues: Partial<Config>) {
   const current = loadConfig();
-  const updated = { ...current, ...newConfig };
+  const updated = { ...current, ...newValues };
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(updated, null, 2));
 }

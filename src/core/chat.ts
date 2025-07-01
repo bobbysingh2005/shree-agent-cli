@@ -1,91 +1,107 @@
 import fs from 'fs';
 import path from 'path';
-import inquirer from 'inquirer';
 import axios from 'axios';
-import chalk from 'chalk';
+import inquirer from 'inquirer';
+import readline from 'readline';
 import { loadConfig, saveConfig } from '../utils/configHelper.js';
 
 const OLLAMA_URL = 'http://localhost:11434';
 
 export async function startChat() {
-  console.log(chalk.yellow('\nOllama Chat Interface\n'));
-
-  // Fetch available models
-  console.log('Loading available models from Ollama...');
-  let modelList: string[] = [];
-  try {
-    const res = await axios.get(`${OLLAMA_URL}/api/tags`);
-    modelList = res.data.models.map((m: any) => m.name);
-    console.log('Models loaded successfully.\n');
-  } catch (error) {
-    console.log('Error: Failed to fetch models from Ollama.');
+  const modelList = await getModelList();
+  if (modelList.length === 0) {
+    console.error('No models found from Ollama.');
     return;
   }
 
-  const modelChoices = modelList.map((name, i) => `${i + 1}. ${name}`);
-  const { selectedModelLabel } = await inquirer.prompt([
+  const config = loadConfig();
+  const defaultModel = config.chatModel && modelList.includes(config.chatModel)
+    ? config.chatModel
+    : modelList[0];
+
+  const { selectedModel } = await inquirer.prompt([
     {
       type: 'list',
-      name: 'selectedModelLabel',
+      name: 'selectedModel',
       message: 'Select an Ollama model to use:',
-      choices: modelChoices
+      choices: modelList,
+      default: defaultModel
     }
   ]);
 
-  const model = selectedModelLabel.split('. ')[1];
-  saveConfig({ chatModel: model });
+  saveConfig({ chatModel: selectedModel });
+
+  console.log(`\nOllama Chat Interface - Model: ${selectedModel}\n`);
+  console.log(`Type your message below. Type 'exit' to return to the main menu.\n`);
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
 
   while (true) {
-    const { input } = await inquirer.prompt([
-      {
-        type: 'input',
-        name: 'input',
-        message: 'You:',
-      }
-    ]);
+    const userInput = await new Promise<string>(resolve => {
+      rl.question('You: ', resolve);
+    });
 
-    const userInput = input.trim().toLowerCase();
-    if (userInput === ':menu') return;
-    if (userInput === ':exit') process.exit();
-
-    console.log('🔁 Sending message to Ollama...\n');
+    if (userInput.toLowerCase() === 'exit') {
+      rl.close();
+      break;
+    }
 
     try {
       const res = await axios.post(`${OLLAMA_URL}/api/generate`, {
-        model,
-        prompt: input,
-        stream: true
-      }, {
-        responseType: 'stream'
+        model: selectedModel,
+        prompt: userInput,
+        stream: false
       });
 
-      console.log(chalk.green('💬 Ollama:\n'));
-
-      let buffer = '';
-      res.data.on('data', (chunk: Buffer) => {
-        const lines = chunk.toString().split('\n').filter(Boolean);
-        for (const line of lines) {
-          try {
-            const json = JSON.parse(line);
-            if (json.response) {
-              process.stdout.write(json.response);
-              buffer += json.response;
-            }
-          } catch (err) {
-            // skip bad JSON line
-          }
-        }
-      });
-
-      await new Promise<void>((resolve) => {
-        res.data.on('end', () => {
-          console.log('\n');
-          resolve();
-        });
-      });
-
-    } catch (e) {
-      console.log('❌ Error: Failed to get response from Ollama.\n');
+      const response = res.data?.response?.trim();
+      if (response) {
+        console.log(`\nOllama: ${response}\n`);
+      } else {
+        console.log('\n⚠️ No response from Ollama.\n');
+      }
+    } catch (e: any) {
+      console.error('Error:', e.message);
     }
+  }
+}
+
+export async function chatWithFileContext(filePath: string) {
+  const modelList = await getModelList();
+  const config = loadConfig();
+  const selectedModel = config.chatModel || modelList[0];
+
+  const content = fs.readFileSync(filePath, 'utf-8');
+
+  const prompt = `This is the content of a file with issues:\n\n${content}\n\nPlease provide suggestions to fix or improve this file.`;
+
+  try {
+    const res = await axios.post(`${OLLAMA_URL}/api/generate`, {
+      model: selectedModel,
+      prompt,
+      stream: false
+    });
+
+    const response = res.data?.response?.trim();
+    if (response) {
+      console.log('\nOllama Suggestion:\n');
+      console.log(response);
+    } else {
+      console.log('\n⚠️ No suggestion received.\n');
+    }
+  } catch (e: any) {
+    console.error('Chat error:', e.message);
+  }
+}
+
+async function getModelList(): Promise<string[]> {
+  try {
+    const res = await axios.get(`${OLLAMA_URL}/api/tags`);
+    return res.data.models.map((m: any) => m.name);
+  } catch (e: any) {
+    console.error('Error fetching models:', e.message);
+    return [];
   }
 }

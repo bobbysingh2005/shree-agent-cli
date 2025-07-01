@@ -1,62 +1,74 @@
 import fs from 'fs';
 import path from 'path';
 import inquirer from 'inquirer';
+import chalk from 'chalk';
 
 export async function validateProject() {
-  console.log('Validating Project Files');
+  console.log('\n🔍 Project Validator');
 
-  const files = fs.readdirSync(process.cwd()).filter(f => f.endsWith('.json'));
-  if (files.length === 0) {
-    console.error('No .json project plans found.');
+  const jsonFiles = fs.readdirSync(process.cwd()).filter(f => f.endsWith('.json'));
+  if (jsonFiles.length === 0) {
+    console.error(chalk.red('❌ No .json project plan files found.'));
     return;
   }
 
-  const { selectedFile } = await inquirer.prompt([
+  const { selectedPlan } = await inquirer.prompt([
     {
       type: 'list',
-      name: 'selectedFile',
-      message: 'Select project plan to validate:',
-      choices: files
+      name: 'selectedPlan',
+      message: '📄 Select a project plan file:',
+      choices: jsonFiles
     }
   ]);
 
-  const plan = JSON.parse(fs.readFileSync(path.resolve(selectedFile), 'utf-8'));
-  const base = path.resolve(process.cwd(), plan.name.replace(/\s+/g, '_'));
+  const planPath = path.resolve(selectedPlan);
+  const plan = JSON.parse(fs.readFileSync(planPath, 'utf-8'));
+
+  const outputFolder = plan.name.replace(/\s+/g, '_');
+  const base = path.resolve(process.cwd(), outputFolder);
 
   if (!fs.existsSync(base)) {
-    console.error(`Project folder not found: ${base}`);
+    console.error(chalk.red('❌ Project folder not found.'));
     return;
   }
 
-  const allFiles: string[] = [];
+  const stepsArray = plan.steps.split('\n').filter((line: string) => line.trim() !== '');
+  let allPassed = true;
+  const missing: string[] = [];
 
-  function collectFiles(dir: string): void {
-    for (const file of fs.readdirSync(dir)) {
-      const fullPath = path.join(dir, file);
-      const stat = fs.statSync(fullPath);
-      if (stat.isDirectory()) {
-        collectFiles(fullPath);
-      } else {
-        allFiles.push(fullPath);
-      }
+  for (const step of stepsArray) {
+    const match = step.match(/^\d+\.\s*(.*)$/);
+    if (!match) continue;
+
+    const fileName = match[1].trim().replace(/\s+/g, '-').toLowerCase() + '.md';
+    const filePath = path.join(base, fileName);
+
+    if (!fs.existsSync(filePath)) {
+      console.log(chalk.red(`❌ Missing file: ${fileName}`));
+      missing.push(fileName);
+      allPassed = false;
+    } else {
+      console.log(chalk.green(`✅ Found: ${fileName}`));
     }
   }
 
-  collectFiles(base);
-
-  let hasError = false;
-  for (const step of plan.steps) {
-    const expectedFile = step.replace(/\s+/g, '-').toLowerCase() + '.md';
-    const expectedPath = path.join(base, expectedFile);
-    if (!fs.existsSync(expectedPath)) {
-      console.log(`Missing file: ${expectedFile}`);
-      hasError = true;
-    }
-  }
-
-  if (!hasError) {
-    console.log('All expected files found.');
+  if (allPassed) {
+    console.log(chalk.greenBright('\n🎉 All project files are present and correct.\n'));
   } else {
-    console.log('Some issues found during validation.');
+    console.log(chalk.yellow('\n⚠️ Some issues found during validation.'));
+
+    const { wantsHelp } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'wantsHelp',
+        message: '💬 Do you want to chat with Ollama about the missing files?',
+        default: true
+      }
+    ]);
+
+    if (wantsHelp) {
+      const { chatWithFileContext } = await import('./chatFileContext.js');
+      await chatWithFileContext(plan, missing);
+    }
   }
 }

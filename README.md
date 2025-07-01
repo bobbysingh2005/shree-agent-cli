@@ -1,81 +1,115 @@
-# shreeAgentCli
+# 🧠 shreeAgentCli
 
-**A smart, accessible CLI tool powered by Ollama AI models to help developers plan, generate, and test full-stack projects with ease.**
-
-Command: `taskAgent`
-
----
+A fully accessible AI-powered CLI tool for developers.  
+It helps with brainstorming, planning, generating, and validating complete projects using local Ollama models.
+A powerful AI-powered CLI tool to generate, validate, and interact with code projects using Ollama models — fully screen-reader accessible.
 
 ## 📦 Features
 
-1. **Chat with Ollama**
-   - General-purpose conversation with any local Ollama model.
-
-2. **Project Discussion**
-   - Create a full project plan by answering questions.
-   - Stores plan as a JSON file in root directory.
-
-3. **Project Generation**
-   - Selects a `.json` plan from project root.
-   - Asks Ollama to:
-     - Generate folder and file structure.
-     - Write source code in each file.
-
-4. **Project Validation**
-   - Checks if generated files exist and steps match the plan.
+- ✅ Chat with Ollama models (streaming real-time)
+- ✅ Project Discussion (plan name, description, and steps)
+- ✅ Project Generation (generate structure + code)
+- ✅ Project Validation (check all expected files exist)
+- ✅ File-based context chat after validation
+- ✅ Stores config per feature (chat model, gen model, etc.)
+- ✅ CLI Help via `taskAgent --help`
+- ✅ Fully screen-reader compatible
+- ✅ Interactive project steps via CLI (no external editor)
 
 ---
 
-## ✅ Requirements
+## 🚀 CLI Usage
 
-- Node.js version 18 or higher
-- TypeScript (for development)
-- Ollama running locally (`http://localhost:11434`)
-- Ollama model installed (e.g., `llama3`, `codellama`, `gemma`, etc.)
+Run the CLI from any terminal:
 
----
-
-## 🔧 Installation (Development Mode)
-
-1. Clone this repository:
-
-```
-git clone https://github.com/bobbysingh2005/shree-agent-cli.git
-cd shreeAgentCli
-```
-2. 
-Install dependencies:
-```
-npm install
-```
-3. 
-Build project:
-```
-npm run build
-```
-4. 
-Link CLI command globally:
-```
-npm link
-```
-5. 
-Now you can run:
-```
+```sh
 taskAgent
+````
+
+You'll be prompted with 5 options:
+
+1. Chat with Ollama
+2. Project Discussion
+3. Project Generation
+4. Project Validation
+5. Exit
+
+---
+
+## 📁 Project Discussion Flow
+
+Creates a JSON file like `my_project.json`.
+
+You'll be asked for:
+
+* Project name
+* Description
+* Output folder name (where project will be generated)
+* Steps (one-by-one in terminal)
+
+This project plan is reused for generation and validation.
+
+---
+
+## 🧠 Project Generation Flow
+
+* Select an existing JSON plan
+* Select Ollama model from list
+* AI generates project structure first (as file list)
+* Then it generates each file’s content using the model
+* Saves files into the `outputFolder` defined earlier
+
+---
+
+## ✅ Validation Flow
+
+Checks that all the files in your step plan or AI-generated structure exist.
+
+Also allows chatting with Ollama based on missing/incomplete files.
+
+---
+
+## 💬 Chat Mode
+
+* Choose model
+* Start chatting (streaming enabled)
+* Type `:menu` or `:exit` to return to main menu
+
+---
+
+## 🛠 Help
+
+```sh
+taskAgent --help
 ```
 
+---
 
-## How to Contribute
+## 🙌 Contributing
 
-We welcome your contributions to improve the CLI!
+1. Fork the repo
+2. Run `npm install`
+3. Make changes in `src/`
+4. Build with `npm run build`
+5. Test via `npm link`
 
-1. Fork the repository
-2. Create a new branch:
-   git checkout -b feature/your-feature-name
-3. Make changes and add tests
-4. Commit and push:
-   git commit -m "Add your message"
-   git push origin feature/your-feature-name
-5. Open a pull request
+You're welcome to contribute bug fixes, improvements, or accessibility enhancements!
 
-Please follow the existing file structure and naming conventions.
+---
+
+## 🧱 Built With
+
+* Node.js (TypeScript)
+* Inquirer.js
+* Axios
+* Chalk
+* Ollama (via local REST API)
+
+---
+
+## 🧑‍💻 Author
+
+Smart Topper — blind developer advocate for accessible tools ❤️
+
+```
+
