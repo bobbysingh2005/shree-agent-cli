@@ -50,12 +50,25 @@ export async function startChat() {
     }
 
     try {
-      const res = await axios.post(`${OLLAMA_URL}/api/generate`, {
+      // const res = await axios.post(`${OLLAMA_URL}/api/chat`, {
+        const res = await axios.post(`${OLLAMA_URL}/api/generate`, {
         model: selectedModel,
         prompt: userInput,
-        stream: false
+        // prompt: `You are a helpful code assistant,\n ${userInput}`,
+        // messages: [{ "role": "system", "content": "You are a helpful code assistant." }, { "role": "user", "content": userInput }],
+        stream: false,
+        // "format": "json",
+        "options": {
+          "temperature": 0.02,
+          // "top_p": 0.9,
+          // "repeat_penalty": 1.1,
+          // "stop": ["\n\n"]
+          // "num_ctx": 2048
+        },
+        "keep_alive": "5m"
       });
 
+      // const response = res.data?.message?.content?.trim();
       const response = res.data?.response?.trim();
       if (response) {
         console.log(`\nOllama: ${response}\n`);
