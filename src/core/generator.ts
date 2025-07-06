@@ -80,10 +80,12 @@ You are an AI assistant. Based on this project description:
 ${plan.description}
 """
 Generate a list of all important files (with relative paths) required to implement this project.
-Return only a JSON array like: ["src/index.ts", "src/routes/user.ts", "README.md"]
+Return only a JSON array like: ["src/index.js", "src/routes/user.js", "README.md"]
 Do NOT return code or explanation.
+make sure folder and file structure is validate with project requirements.
 `;
 
+console.log('Project description: ', plan.description)
   console.log('\n📁 Generating folder structure...');
   let fileList: string[] = [];
 
@@ -92,9 +94,11 @@ Do NOT return code or explanation.
       model: selectedModel,
       prompt: promptStructure,
       stream: false,
-    });
+      options:{ temperature: 0.7 }
+    });//endResponseFolderStructure
 
     let response = res.data.response.trim();
+    console.log('project folder structure with file names: ',response)
     if (response.startsWith('```')) {
       response = response.replace(/```[a-z]*\n?/gi, '').replace(/```$/, '').trim();
     }
@@ -113,7 +117,7 @@ Do NOT return code or explanation.
     const dir = path.dirname(fullPath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(fullPath, '// Placeholder');
-  }
+  };//endFor
 
   console.log(chalk.green(`📂 Created ${fileList.length} files.`));
 
@@ -124,7 +128,8 @@ Do NOT return code or explanation.
     const fullPath = path.join(base, relPath);
     const filePrompt = `Generate complete code for file: ${relPath}.
 It is part of this project: ${plan.description}
-Only return valid code.`;
+Only return valid code.
+also make sure file content and context is valid and code is well formatted.`;
 
     console.log(chalk.gray(`\n💡 Generating (${index}/${fileList.length}): ${relPath}`));
 
@@ -133,6 +138,7 @@ Only return valid code.`;
         model: selectedModel,
         prompt: filePrompt,
         stream: false,
+        options:{ temperature: 0.02 }
       });
 
       let code = res.data.response.trim();
