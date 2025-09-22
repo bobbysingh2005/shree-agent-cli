@@ -1,13 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 
-const CONFIG_PATH = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.shreeAgentCli.json');
+const CONFIG_PATH = path.join(process.cwd(), '.taskAgent', 'config.json');
 
 export type Config = {
   chatModel?: string;
   generateModel?: string;
   [key: string]: string | undefined; // ✅ This allows dynamic keys
 };
+
 
 export function loadConfig(): Config {
   if (!fs.existsSync(CONFIG_PATH)) return {};
@@ -19,8 +20,12 @@ export function loadConfig(): Config {
   }
 }
 
+
 export function saveConfig(newValues: Partial<Config>) {
-  const current = loadConfig();
+  let current = {};
+  if (fs.existsSync(CONFIG_PATH)) {
+    current = loadConfig();
+  }
   const updated = { ...current, ...newValues };
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(updated, null, 2));
 }
