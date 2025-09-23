@@ -7,8 +7,8 @@ A powerful AI-powered CLI tool to generate, validate, and interact with code pro
 ## 📦 Features
 
 - ✅ Chat with Ollama models (streaming real-time)
-- ✅ Project Discussion (plan name, description, and steps)
-- ✅ Project Generation (generate structure + code)
+- ✅ Project Discussion (plan name, description, steps, and language)
+- ✅ Project Generation (generate structure + code, language-aware)
 - ✅ Project Validation (check all expected files exist)
 - ✅ File-based context chat after validation
 - ✅ Stores config per feature (chat model, gen model, etc.)
@@ -23,10 +23,28 @@ A powerful AI-powered CLI tool to generate, validate, and interact with code pro
 
 ---
 
+## 🌐 Multi-Language Project Support
+
+When creating a new project or using an existing plan, you can now select the target programming language (JavaScript, TypeScript, Python, PHP, .NET, Go, Rust, Java, C++, etc.).
+
+- The selected language is saved in your project plan and used for all code generation, validation, and analysis.
+- The agentic CLI and AI model will generate code, folder structure, and suggestions tailored to your chosen language.
+
+**Example:**
+
+1. Run `taskAgent` and select **Project Generation**.
+2. Choose to create a new plan or use an existing file.
+3. When prompted, select your project language (e.g., Python).
+4. The CLI and AI will generate a Python project structure and code.
+
+This makes the CLI suitable for any tech stack and helps you build, debug, and improve projects in your preferred language.
+
+---
 
 ## 🏗️ Works with Existing Projects
 
 You can use shreeAgentCli with both new and existing projects. For existing codebases, the CLI lets you:
+
 - Analyze the current structure and stack
 - Chat about your code, issues, or improvements
 - Generate new files or code for the existing project
@@ -34,10 +52,10 @@ You can use shreeAgentCli with both new and existing projects. For existing code
 - Use the "Analysis & Debugging" menu to iterate after manual changes or debugging
 - Get suggestions and extend with plugins
 
-
 ### Example: Using shreeAgentCli with an Existing Project
 
 Suppose you have a Node.js project and want to:
+
 - Analyze the current structure
 - Chat about a bug or missing feature
 - Generate a new route file
@@ -56,6 +74,7 @@ Suppose you have a Node.js project and want to:
 This approach works for any existing codebase, not just new projects!
 
 ---
+
 ## 🚀 CLI Usage
 
 Run the CLI from any terminal:
@@ -63,7 +82,6 @@ Run the CLI from any terminal:
 ```sh
 taskAgent
 ```
-
 
 You'll be prompted with options:
 
@@ -83,18 +101,18 @@ You'll be prompted with options:
 
 In chat mode, you can now use agentic commands to interact with your project directly:
 
-| Command         | Description                                 |
-|-----------------|---------------------------------------------|
-| `:ls`           | List files and folders in current directory  |
-| `:cat <file>`   | Show contents of a file                     |
-| `:write <file> <content>` | Write content to a file            |
-| `:gen <prompt>` | Generate code for a prompt (model-based)    |
-| `:validate`     | Run project validation                      |
-| `:analyze`      | Run project analysis                        |
-| `:save <name>`  | Save chat session                           |
-| `:load <name>`  | Load chat session                           |
-| `:sessions`     | List saved sessions                         |
-| `exit`          | Return to main menu                         |
+| Command                   | Description                                 |
+| ------------------------- | ------------------------------------------- |
+| `:ls`                     | List files and folders in current directory |
+| `:cat <file>`             | Show contents of a file                     |
+| `:write <file> <content>` | Write content to a file                     |
+| `:gen <prompt>`           | Generate code for a prompt (model-based)    |
+| `:validate`               | Run project validation                      |
+| `:analyze`                | Run project analysis                        |
+| `:save <name>`            | Save chat session                           |
+| `:load <name>`            | Load chat session                           |
+| `:sessions`               | List saved sessions                         |
+| `exit`                    | Return to main menu                         |
 
 **Examples:**
 
@@ -125,7 +143,6 @@ This workflow helps you iterate quickly after each debug cycle, keeping your pro
 
 ---
 
-
 ## 🤖 Per-Task Model Selection
 
 You can now assign different Ollama models to each agent task (analysis, development, documentation, testing, suggestions, chat) for maximum flexibility and performance.
@@ -150,10 +167,14 @@ You can now assign different Ollama models to each agent task (analysis, develop
 You can edit this file directly or use the CLI for a guided setup.
 
 ---
-## 🗂 .taskAgent Workspace
 
-When you run the CLI, a `.taskAgent/` folder is created in your project root.  
-This folder stores all your plans, history, sessions, configuration, logs, and analysis.
+## 🗂 .taskAgent Workspace & Project Indexing
+
+When you run the CLI for the first time, a `.taskAgent/` folder is created in your project root. The CLI will automatically analyze and index your project, saving the results to `.taskAgent/meta.json`.
+
+This gives both you and the agentic CLI app immediate project context for smarter AI actions, suggestions, and code generation.
+
+The `.taskAgent/` folder stores all your plans, history, sessions, configuration, logs, and analysis.
 
 ```
 .taskAgent/
@@ -187,11 +208,15 @@ You can customize `config.json` like this:
 
 ```js
 module.exports = {
-  name: "MyPlugin",
+  name: 'MyPlugin',
   hooks: {
-    onPlan: () => { console.log("Planning started!"); },
-    onGenerate: () => { console.log("Generation started!"); }
-  }
+    onPlan: () => {
+      console.log('Planning started!');
+    },
+    onGenerate: () => {
+      console.log('Generation started!');
+    },
+  },
 };
 ```
 
@@ -235,9 +260,9 @@ npm publish --access public
 
 ## 💬 Chat Mode
 
-* Choose model
-* Start chatting (streaming enabled)
-* Type `:menu` or `:exit` to return to main menu
+- Choose model
+- Start chatting (streaming enabled)
+- Type `:menu` or `:exit` to return to main menu
 
 ---
 
@@ -263,17 +288,43 @@ You're welcome to contribute bug fixes, improvements, or accessibility enhanceme
 
 ## 🧱 Built With
 
-* Node.js (TypeScript)
-* Inquirer.js
-* Axios
-* Chalk
-* Ollama (via local REST API)
+- Node.js (TypeScript)
+- Inquirer.js
+- Axios
+- Chalk
+- Ollama (via local REST API)
 
 ---
 
 ## 🧑‍💻 Author
 
 Smart Topper — blind developer advocate for accessible tools ❤️
+
+---
+
+## ⚡ Code Quality, Linting, and Pre-commit Hooks
+
+shreeAgentCli enforces strict code quality using ESLint and Prettier. All code must pass linting and formatting checks before it can be committed or built.
+
+- **Pre-commit hooks**: ESLint and Prettier run automatically before every commit (via Husky and lint-staged).
+- **No lint errors allowed**: Commits and builds will fail if any lint errors remain. Fix all reported issues before pushing changes.
+- **How to fix lint errors**:
+  - Run `npm run lint` to see all errors and warnings.
+  - Run `npm run lint -- --fix` to auto-fix simple issues.
+  - Run `npm run format` to apply Prettier formatting.
+  - Address any remaining errors manually in your code.
+- **TypeScript strictness**: Avoid using `any` types. Use specific types and interfaces for all variables and function signatures.
+- **CI/CD**: Linting and tests are enforced in CI pipelines.
+
+**Developer workflow:**
+
+1. Write or update code in `src/`.
+2. Run `npm run lint` and `npm run format`.
+3. Run `npm run build` and `npm test`.
+4. Commit only after all lint, build, and test steps pass.
+5. If you see lint errors, fix them before retrying commit/build.
+
+See `DEVELOPER_GUIDE.md` for more details on contributing and code standards.
 
 ---
 
@@ -292,4 +343,3 @@ This makes it easy to start new projects or reuse/iterate on existing plans.
 2. Choose to create a new plan or use an existing file.
 3. If creating new, fill in the prompts (steps can be entered in your editor, one per line).
 4. The CLI saves your plan and continues with model selection and project generation.
-

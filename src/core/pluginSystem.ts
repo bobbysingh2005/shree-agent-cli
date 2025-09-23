@@ -4,7 +4,7 @@ import fs from 'fs';
 export type PluginHook = 'onPlan' | 'onGenerate';
 export type Plugin = {
   name: string;
-  hooks: Partial<Record<PluginHook, (...args: any[]) => void>>;
+  hooks: Partial<Record<PluginHook, (...args: unknown[]) => void>>;
 };
 
 export function loadPlugins(): Plugin[] {
@@ -25,7 +25,7 @@ export function loadPlugins(): Plugin[] {
   return plugins;
 }
 
-export function runHook(hook: PluginHook, ...args: any[]) {
+export function runHook(hook: PluginHook, ...args: unknown[]) {
   const plugins = loadPlugins();
   for (const plugin of plugins) {
     if (plugin.hooks[hook]) {

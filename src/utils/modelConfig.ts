@@ -10,7 +10,11 @@ export type TaskModelMap = {
   chat?: string;
 };
 
-const CONFIG_PATH = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.taskagent', 'config.json');
+const CONFIG_PATH = path.join(
+  process.env.HOME || process.env.USERPROFILE || '.',
+  '.taskagent',
+  'config.json',
+);
 
 export function loadModelConfig(): TaskModelMap {
   if (!fs.existsSync(CONFIG_PATH)) return {};
@@ -24,11 +28,11 @@ export function loadModelConfig(): TaskModelMap {
 }
 
 export function saveModelConfig(models: TaskModelMap) {
-  let config: any = {};
+  let config: Record<string, unknown> = {};
   if (fs.existsSync(CONFIG_PATH)) {
     config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
   }
-  config.models = models;
+  (config as { models?: TaskModelMap }).models = models;
   fs.mkdirSync(path.dirname(CONFIG_PATH), { recursive: true });
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
 }

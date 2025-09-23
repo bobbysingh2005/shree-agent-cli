@@ -20,5 +20,8 @@ export function generateSuggestions(analysis: ProjectAnalysis): string[] {
 export function writeSuggestionsToFile(suggestions: string[], rootDir: string = process.cwd()) {
   const agentDir = path.join(rootDir, '.taskAgent');
   const filePath = path.join(agentDir, 'suggestions.md');
-  fs.writeFileSync(filePath, '# Project Suggestions\n\n' + suggestions.map(s => `- ${s}`).join('\n'));
+  fs.writeFileSync(
+    filePath,
+    '# Project Suggestions\n\n' + suggestions.map((s) => `- ${s}`).join('\n'),
+  );
 }

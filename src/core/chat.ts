@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+// import fs from 'fs';
+// import path from 'path';
 import axios from 'axios';
 import inquirer from 'inquirer';
 import readline from 'readline';
@@ -9,13 +9,12 @@ import { saveSession, loadSession, listSessions } from '../utils/sessionManager.
 
 const OLLAMA_URL = 'http://localhost:11434';
 
-
 export async function startChat() {
   // Show platform info and tips
   const { getPlatformInfo } = await import('./osHelper.js');
   const platform = getPlatformInfo();
   console.log(`\n[Platform: ${platform.name}]  [Shell: ${platform.shell}]`);
-  platform.tips.forEach(tip => console.log('•', tip));
+  platform.tips.forEach((tip) => console.log('•', tip));
   const modelList = await getModelList();
   if (modelList.length === 0) {
     const msg = 'No models found from Ollama.';
@@ -25,9 +24,8 @@ export async function startChat() {
   }
 
   const config = loadConfig();
-  const defaultModel = config.chatModel && modelList.includes(config.chatModel)
-    ? config.chatModel
-    : modelList[0];
+  const defaultModel =
+    config.chatModel && modelList.includes(config.chatModel) ? config.chatModel : modelList[0];
 
   const { selectedModel } = await inquirer.prompt([
     {
@@ -35,18 +33,20 @@ export async function startChat() {
       name: 'selectedModel',
       message: 'Select an Ollama model to use:',
       choices: modelList,
-      default: defaultModel
-    }
+      default: defaultModel,
+    },
   ]);
 
   saveConfig({ chatModel: selectedModel });
 
   console.log(`\nOllama Chat Interface - Model: ${selectedModel}\n`);
-  console.log(`Type your message below. Type ':save <name>' to save, ':load <name>' to load, ':sessions' to list, or 'exit' to return to the main menu.\n`);
+  console.log(
+    `Type your message below. Type ':save <name>' to save, ':load <name>' to load, ':sessions' to list, or 'exit' to return to the main menu.\n`,
+  );
 
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
 
   // Load last session if exists
@@ -68,8 +68,9 @@ export async function startChat() {
   // System prompt: describe available tools
   const systemPrompt = `You are an agentic CLI assistant. You can use the following tools by responding with <<TOOL:toolName[:arg]>>. Tools: listDir, readFile:<file>, writeFile:<file>:<content>, generateCode:<prompt>, validateProject, analyzeProject. Example: <<TOOL:listDir>> or <<TOOL:readFile:README.md>>.`;
 
+  // eslint-disable-next-line no-constant-condition
   while (true) {
-    const userInput = await new Promise<string>(resolve => {
+    const userInput = await new Promise<string>((resolve) => {
       rl.question('You: ', resolve);
     });
 
@@ -107,7 +108,9 @@ export async function startChat() {
 
     // Default: send to model (with system prompt and history)
     let promptToSend = systemPrompt + '\n';
-    messages.forEach(m => { promptToSend += m + '\n'; });
+    messages.forEach((m) => {
+      promptToSend += m + '\n';
+    });
     promptToSend += `You: ${userInput}`;
 
     try {
@@ -116,9 +119,9 @@ export async function startChat() {
         prompt: promptToSend,
         stream: false,
         options: { temperature: 0.02 },
-        keep_alive: '5m'
+        keep_alive: '5m',
       });
-      let response = res.data?.response?.trim();
+      const response = res.data?.response?.trim();
       if (response) {
         // Tool-calling loop
         let toolMatch;
@@ -134,7 +137,7 @@ export async function startChat() {
             type: 'confirm',
             name: 'confirm',
             message: `AI wants to run: ${tool}${arg ? ' (' + arg + ')' : ''}. Do you approve?`,
-            default: false
+            default: false,
           });
           if (!confirm) {
             toolResult = '[Action skipped by user]';
@@ -146,7 +149,9 @@ export async function startChat() {
           try {
             if (tool === 'listDir') {
               const files = toolbox.listDir();
-              toolResult = files.map(f => f.isDirectory ? `[DIR] ${f.name}` : `     ${f.name}`).join('\n');
+              toolResult = files
+                .map((f) => (f.isDirectory ? `[DIR] ${f.name}` : `     ${f.name}`))
+                .join('\n');
             } else if (tool === 'readFile' && arg) {
               toolResult = toolbox.readFile(arg);
             } else if (tool === 'writeFile' && arg) {
@@ -163,8 +168,12 @@ export async function startChat() {
             } else {
               toolResult = 'Unknown tool or missing argument.';
             }
-          } catch (e: any) {
-            toolResult = 'Tool error: ' + e.message;
+          } catch (e: unknown) {
+            if (e instanceof Error) {
+              toolResult = 'Tool error: ' + e.message;
+            } else {
+              toolResult = 'Tool error: ' + String(e);
+            }
           }
           // Show tool result and append to messages
           console.log(`\n[Tool: ${tool}]\n${toolResult}\n`);
@@ -179,21 +188,28 @@ export async function startChat() {
       } else {
         console.log('\n⚠️ No response from Ollama.\n');
       }
-    } catch (e: any) {
-      console.error('Error:', e.message);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        console.error('Error:', e.message);
+      } else {
+        console.error('Error:', e);
+      }
     }
     // Always save session after each turn
     saveSession('last', messages);
   }
 }
 
-
 async function getModelList(): Promise<string[]> {
   try {
     const res = await axios.get(`${OLLAMA_URL}/api/tags`);
-    return res.data.models.map((m: any) => m.name);
-  } catch (e: any) {
-    console.error('Error fetching models:', e.message);
+    return res.data.models.map((m: { name: string }) => m.name);
+  } catch (e: unknown) {
+    if (e instanceof Error) {
+      console.error('Error fetching models:', e.message);
+    } else {
+      console.error('Error fetching models:', e);
+    }
     return [];
   }
 }

@@ -12,9 +12,13 @@ export async function chatWithOllama() {
 
   try {
     const res = await axios.get(`${OLLAMA_URL}/api/tags`);
-    modelList = res.data.models.map((m: any) => m.name);
-  } catch (error: any) {
-    console.error(chalk.red(`❌ Failed to fetch models: ${error.message}`));
+    modelList = res.data.models.map((m: { name: string }) => m.name);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error(chalk.red(`❌ Failed to fetch models: ${error.message}`));
+    } else {
+      console.error(chalk.red(`❌ Failed to fetch models: ${error}`));
+    }
     return;
   }
 
@@ -24,9 +28,8 @@ export async function chatWithOllama() {
   }
 
   const config = loadConfig();
-  const defaultModel = config.chatModel && modelList.includes(config.chatModel)
-    ? config.chatModel
-    : modelList[0];
+  const defaultModel =
+    config.chatModel && modelList.includes(config.chatModel) ? config.chatModel : modelList[0];
 
   console.log('\nAvailable models:');
   modelList.forEach((model, index) => {
@@ -41,9 +44,12 @@ export async function chatWithOllama() {
       message: `Enter model number to use (1–${modelList.length}):`,
       validate: (input) => {
         const n = Number(input);
-        return n >= 1 && n <= modelList.length || `Please enter a number between 1 and ${modelList.length}`;
-      }
-    }
+        return (
+          (n >= 1 && n <= modelList.length) ||
+          `Please enter a number between 1 and ${modelList.length}`
+        );
+      },
+    },
   ]);
 
   const selectedModel = modelList[Number(modelIndex) - 1];
@@ -52,13 +58,14 @@ export async function chatWithOllama() {
   console.log(chalk.gray(`\n🧠 Using model: ${selectedModel}`));
   console.log(chalk.gray(`Type ':menu' or 'exit' anytime to return to main menu.\n`));
 
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const { userInput } = await inquirer.prompt([
       {
         type: 'input',
         name: 'userInput',
-        message: chalk.cyan('You:')
-      }
+        message: chalk.cyan('You:'),
+      },
     ]);
 
     const input = userInput.trim().toLowerCase();
@@ -72,13 +79,17 @@ export async function chatWithOllama() {
       const res = await axios.post(`${OLLAMA_URL}/api/chat`, {
         model: selectedModel,
         messages: [{ role: 'user', content: userInput }],
-        stream: false
+        stream: false,
       });
 
       const reply = res.data.message?.content || '[No response from model]';
       console.log(chalk.magentaBright(`\n🧠 Ollama: ${reply}\n`));
-    } catch (error: any) {
-      console.error(chalk.red(`❌ Error from Ollama: ${error.message}`));
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(chalk.red(`❌ Error from Ollama: ${error.message}`));
+      } else {
+        console.error(chalk.red(`❌ Error from Ollama: ${error}`));
+      }
     }
   }
 }

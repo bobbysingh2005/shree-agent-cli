@@ -13,19 +13,43 @@ import { generateSuggestions, writeSuggestionsToFile } from './core/suggestion.j
 import { runHook } from './core/pluginSystem.js';
 import { configureModels } from './core/configureModels.js';
 
+// Version flag support
+const pkgPath = path.join(__dirname, '..', 'package.json');
+let version = 'unknown';
+try {
+  version = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version;
+} catch {
+  // ignore version read error
+}
+
+if (process.argv.includes('--version') || process.argv.includes('-v')) {
+  console.log('shreeAgentCli version:', version);
+  process.exit(0);
+}
+
 export async function runCLI() {
   // Ensure .taskAgent folder exists in project root
   const agentDir = path.join(process.cwd(), '.taskAgent');
+  let firstRun = false;
   if (!fs.existsSync(agentDir)) {
     fs.mkdirSync(agentDir, { recursive: true });
     fs.mkdirSync(path.join(agentDir, 'logs'), { recursive: true });
     fs.mkdirSync(path.join(agentDir, 'history'), { recursive: true });
-      fs.mkdirSync(path.join(agentDir, 'plans'), { recursive: true });
+    fs.mkdirSync(path.join(agentDir, 'plans'), { recursive: true });
     fs.mkdirSync(path.join(agentDir, 'sessions'), { recursive: true });
     // Optionally, create empty config.json and meta.json
     fs.writeFileSync(path.join(agentDir, 'config.json'), JSON.stringify({}, null, 2));
-    fs.writeFileSync(path.join(agentDir, 'meta.json'), JSON.stringify({}, null, 2));
+    firstRun = true;
   }
+  // Always (re)index project on first run or if meta.json missing
+  const metaPath = path.join(agentDir, 'meta.json');
+  if (firstRun || !fs.existsSync(metaPath)) {
+    const { analyzeProject } = await import('./core/analyze.js');
+    const analysis = analyzeProject();
+    fs.writeFileSync(metaPath, JSON.stringify(analysis, null, 2));
+    console.log('\n📊 Project indexed and analysis saved to .taskAgent/meta.json');
+  }
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const { choice } = await inquirer.prompt([
       {
@@ -41,9 +65,9 @@ export async function runCLI() {
           '6. Analyze Project',
           '7. Generate Suggestions',
           '8. Configure Models (select models for each task)',
-          '9. Exit'
-        ]
-      }
+          '9. Exit',
+        ],
+      },
     ]);
 
     if (choice.startsWith('1')) {
@@ -72,9 +96,9 @@ export async function runCLI() {
             'Chat about issues/fixes',
             'Generate new code/files',
             'Re-validate project',
-            'Back to main menu'
-          ]
-        }
+            'Back to main menu',
+          ],
+        },
       ]);
       if (debugAction === 'Chat about issues/fixes') {
         await startChat();

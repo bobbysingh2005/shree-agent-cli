@@ -28,6 +28,12 @@ This file tracks the step-by-step progress of all planned features for the Agent
 - [x] **Integrate unit and integration tests**
   - Set up Jest or Vitest for testing. Mock external API calls for reliable test coverage.
 
+- [x] **Fix all remaining lint errors**
+  - All ESLint errors in the src directory have been resolved. Codebase now enforces strict linting and formatting before commit/build. See README.md for details.
+
+- [x] **Update documentation and user guide**
+  - README.md, USER_GUIDE.md, and other docs updated to reflect latest code, linting, and usage patterns. Strict linting and pre-commit hooks are now documented.
+
 - [ ] **Prepare for npm release**
   - Publish the CLI as `task-agent` on npm. Include semantic versioning and auto-changelog.
 

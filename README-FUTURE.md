@@ -84,12 +84,12 @@ A phased plan to evolve the Agentic CLI into a fully autonomous, AI-powered deve
 ```
 
 .taskAgent/
-├── config.json           # Models, settings
-├── meta.json             # Project analysis
-├── history/              # CLI command logs
-├── plans/                # Saved project plans
-├── sessions/             # Chat session files
-├── logs/                 # errors.log, commands.log
+├── config.json # Models, settings
+├── meta.json # Project analysis
+├── history/ # CLI command logs
+├── plans/ # Saved project plans
+├── sessions/ # Chat session files
+├── logs/ # errors.log, commands.log
 
 ```
 
@@ -136,16 +136,15 @@ You can add this at the end of your current `README.md`:
 
 When you run the CLI, a `.taskAgent/` folder is created in your project root.  
 This folder stores all your plans, history, sessions, and configuration.
-
 ```
 
 .taskAgent/
-├── config.json           # CLI and AI model settings
-├── meta.json             # Project analysis output
-├── history/              # Command usage logs
-├── plans/                # Saved project plans
-├── sessions/             # Chat sessions
-├── logs/                 # Error and debug logs
+├── config.json # CLI and AI model settings
+├── meta.json # Project analysis output
+├── history/ # Command usage logs
+├── plans/ # Saved project plans
+├── sessions/ # Chat sessions
+├── logs/ # Error and debug logs
 
 ````
 
@@ -163,12 +162,12 @@ You can customize `config.json` like this:
 
 ## 🧪 Upcoming Features (Planned)
 
-* Project analyzer to detect stack, files, missing folders
-* Plugin system for extending CLI features
-* Saved chat sessions with resume support
-* Better validation and suggestion system
-* `taskAgent init` to bootstrap new projects
-* Full npm support: `npx task-agent`
+- Project analyzer to detect stack, files, missing folders
+- Plugin system for extending CLI features
+- Saved chat sessions with resume support
+- Better validation and suggestion system
+- `taskAgent init` to bootstrap new projects
+- Full npm support: `npx task-agent`
 
 Stay tuned for updates or contribute your own ideas!
 
@@ -176,3 +175,4 @@ Stay tuned for updates or contribute your own ideas!
 
 ```
 
+```

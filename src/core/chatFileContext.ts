@@ -1,24 +1,32 @@
-import fs from 'fs';
+// import fs from 'fs';
 import inquirer from 'inquirer';
 import axios from 'axios';
 import readline from 'readline';
 import { loadConfig, saveConfig } from '../utils/configHelper.js';
 
-export async function chatWithFileContext(plan: any, missingFiles: string[]) {
+export async function chatWithFileContext(
+  plan: { name?: string; description?: string; [key: string]: unknown },
+  missingFiles: string[],
+) {
   const config = loadConfig();
 
   let modelList: string[] = [];
   try {
     const res = await axios.get('http://localhost:11434/api/tags');
-    modelList = res.data.models.map((m: any) => m.name);
-  } catch (err: any) {
-    console.error('❌ Failed to load models:', err.message);
+    modelList = res.data.models.map((m: { name: string }) => m.name);
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error('❌ Failed to load models:', err.message);
+    } else {
+      console.error('❌ Failed to load models:', err);
+    }
     return;
   }
 
-  const defaultModel = config.chatContextModel && modelList.includes(config.chatContextModel)
-    ? config.chatContextModel
-    : modelList[0];
+  const defaultModel =
+    config.chatContextModel && modelList.includes(config.chatContextModel)
+      ? config.chatContextModel
+      : modelList[0];
 
   const { model } = await inquirer.prompt([
     {
@@ -26,8 +34,8 @@ export async function chatWithFileContext(plan: any, missingFiles: string[]) {
       name: 'model',
       message: '🤖 Select model for file context discussion:',
       choices: modelList,
-      default: defaultModel
-    }
+      default: defaultModel,
+    },
   ]);
 
   saveConfig({ chatContextModel: model });
@@ -38,11 +46,12 @@ export async function chatWithFileContext(plan: any, missingFiles: string[]) {
 
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
 
+  // eslint-disable-next-line no-constant-condition
   while (true) {
-    const userMessage = await new Promise<string>(resolve => {
+    const userMessage = await new Promise<string>((resolve) => {
       rl.question('? You: ', resolve);
     });
 
@@ -65,13 +74,17 @@ Now respond as a helpful assistant and give suggestions or solutions.
       const res = await axios.post('http://localhost:11434/api/generate', {
         model,
         prompt,
-        stream: false
+        stream: false,
       });
 
       const reply = res.data.response.trim();
       console.log('\n🤖 Ollama:\n' + reply + '\n');
-    } catch (e: any) {
-      console.error('❌ Chat failed:', e.message);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        console.error('❌ Chat failed:', e.message);
+      } else {
+        console.error('❌ Chat failed:', e);
+      }
     }
   }
 

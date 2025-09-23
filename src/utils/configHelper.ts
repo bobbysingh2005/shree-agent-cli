@@ -9,7 +9,6 @@ export type Config = {
   [key: string]: string | undefined; // ✅ This allows dynamic keys
 };
 
-
 export function loadConfig(): Config {
   if (!fs.existsSync(CONFIG_PATH)) return {};
   try {
@@ -19,7 +18,6 @@ export function loadConfig(): Config {
     return {};
   }
 }
-
 
 export function saveConfig(newValues: Partial<Config>) {
   let current = {};

@@ -29,7 +29,7 @@ export async function configureModels() {
         type: 'list',
         name: 'model',
         message: `Select model for ${task.label}:`,
-        choices: AVAILABLE_MODELS.map(m => ({ name: `${m.name} (${m.desc})`, value: m.name })),
+        choices: AVAILABLE_MODELS.map((m) => ({ name: `${m.name} (${m.desc})`, value: m.name })),
         default: current[task.key as keyof TaskModelMap] || 'llama2:7b',
       },
     ]);

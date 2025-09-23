@@ -18,7 +18,9 @@ export function analyzeProject(rootDir: string = process.cwd()): ProjectAnalysis
     if (pkg.dependencies) {
       stack = Object.keys(pkg.dependencies);
       // Simple heuristic for frameworks
-      frameworks = stack.filter(dep => ['react', 'express', 'next', 'vue', 'nestjs'].includes(dep));
+      frameworks = stack.filter((dep) =>
+        ['react', 'express', 'next', 'vue', 'nestjs'].includes(dep),
+      );
     }
   }
   // Count total lines of code in src/
@@ -37,6 +39,6 @@ export function analyzeProject(rootDir: string = process.cwd()): ProjectAnalysis
   countLines(path.join(rootDir, 'src'));
   // Detect missing folders
   const requiredFolders = ['src', 'bin', 'dist'];
-  const missingFolders = requiredFolders.filter(f => !fs.existsSync(path.join(rootDir, f)));
+  const missingFolders = requiredFolders.filter((f) => !fs.existsSync(path.join(rootDir, f)));
   return { stack, frameworks, totalLines, missingFolders };
 }

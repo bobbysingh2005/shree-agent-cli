@@ -8,7 +8,7 @@ export const toolbox = {
   // List files and folders in the current directory or a subdirectory
   listDir: (subdir = '.') => {
     const dir = path.resolve(process.cwd(), subdir);
-    return fs.readdirSync(dir, { withFileTypes: true }).map(entry => ({
+    return fs.readdirSync(dir, { withFileTypes: true }).map((entry) => ({
       name: entry.name,
       isDirectory: entry.isDirectory(),
     }));

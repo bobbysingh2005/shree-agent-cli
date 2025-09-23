@@ -6,7 +6,10 @@ describe('analyzeProject', () => {
   it('should return analysis for a sample project', () => {
     const tempDir = path.join(__dirname, 'tempProject');
     fs.mkdirSync(tempDir, { recursive: true });
-    fs.writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ dependencies: { react: '^18.0.0' } }));
+    fs.writeFileSync(
+      path.join(tempDir, 'package.json'),
+      JSON.stringify({ dependencies: { react: '^18.0.0' } }),
+    );
     fs.mkdirSync(path.join(tempDir, 'src'), { recursive: true });
     fs.writeFileSync(path.join(tempDir, 'src', 'index.ts'), 'console.log("Hello");\n');
     const result = analyzeProject(tempDir);

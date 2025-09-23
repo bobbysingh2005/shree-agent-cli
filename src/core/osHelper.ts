@@ -9,8 +9,8 @@ export function getPlatformInfo() {
       shell: 'PowerShell or CMD',
       tips: [
         'Use backslashes (\\) in file paths, or forward slashes (/) (Node.js supports both).',
-        'All CLI toolbox commands work natively on Windows.'
-      ]
+        'All CLI toolbox commands work natively on Windows.',
+      ],
     };
   } else if (platform === 'darwin') {
     return {
@@ -18,8 +18,8 @@ export function getPlatformInfo() {
       shell: 'Terminal (bash/zsh)',
       tips: [
         'Use forward slashes (/) in file paths.',
-        'All CLI toolbox commands work natively on macOS.'
-      ]
+        'All CLI toolbox commands work natively on macOS.',
+      ],
     };
   } else {
     return {
@@ -27,8 +27,8 @@ export function getPlatformInfo() {
       shell: 'Terminal (bash/zsh)',
       tips: [
         'Use forward slashes (/) in file paths.',
-        'All CLI toolbox commands work natively on Linux.'
-      ]
+        'All CLI toolbox commands work natively on Linux.',
+      ],
     };
   }
 }

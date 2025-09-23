@@ -20,7 +20,8 @@ export function loadSession(sessionName: string): string[] | null {
 
 export function listSessions(): string[] {
   if (!fs.existsSync(SESSIONS_DIR)) return [];
-  return fs.readdirSync(SESSIONS_DIR)
-    .filter(f => f.endsWith('.json'))
-    .map(f => f.replace('.json', ''));
+  return fs
+    .readdirSync(SESSIONS_DIR)
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => f.replace('.json', ''));
 }
